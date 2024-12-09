@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  helloworld1:
+    image: hashicorp/http-echo:latest
+    container_name: helloworld1
+    ports:
+      - "8081:5678"
+    command: ["-text=Hello from Backend 1"]
+
+  helloworld2:
+    image: hashicorp/http-echo:latest
+    container_name: helloworld2
+    ports:
+      - "8082:5678"
+    command: ["-text=Hello from Backend 2"]
+
+  helloworld3:
+    image: hashicorp/http-echo:latest
+    container_name: helloworld3
+    ports:
+      - "8083:5678"
+    command: ["-text=Hello from Backend 3"]
+
+  helloworld4:
+    image: hashicorp/http-echo:latest
+    container_name: helloworld4
+    ports:
+      - "8084:5678"
+    command: ["-text=Hello from Backend 4"]
