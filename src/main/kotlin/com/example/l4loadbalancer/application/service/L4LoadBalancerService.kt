@@ -73,7 +73,7 @@ class L4LoadBalancerService(
             coroutineScope {
                 // Handle client-to-backend communication
                 launch(Dispatchers.IO) {
-                    proxyClientRequestToBaceknd(bufferToBackend, client, backendServer)
+                    proxyClientRequestToBackend(bufferToBackend, client, backendServer)
                 }
 
                 // Handle backend-to-client communication
@@ -104,7 +104,7 @@ class L4LoadBalancerService(
         }
     }
 
-    private suspend fun proxyClientRequestToBaceknd(
+    private suspend fun proxyClientRequestToBackend(
         bufferToBackend: ByteBuffer, client: AsynchronousSocketChannel, backendServer: AsynchronousSocketChannel
     ) {
         while (true) {
