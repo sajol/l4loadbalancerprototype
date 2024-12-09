@@ -4,10 +4,12 @@ import com.example.l4loadbalancer.application.lbstrategy.LBStrategy
 import com.example.l4loadbalancer.application.lbstrategy.LeastActiveConnectionStrategy
 import com.example.l4loadbalancer.application.lbstrategy.RoundRobinStrategy
 import com.example.l4loadbalancer.application.lbstrategy.WeightedRoundRobinStrategy
+import mu.KotlinLogging
 import java.net.InetSocketAddress
 
 class BackendConfigService {
 
+    private val logger = KotlinLogging.logger {}
     private var backEndConfig: BackendConfig
 
     // Static data to simulate the behavior (will be fetched from DB in the future)
@@ -44,13 +46,15 @@ class BackendConfigService {
     }
 
     private fun getBackendConfig(): BackendConfig {
-        return leastActiveConnectionBackendConfig // Replace with dynamic logic if needed
+        return roundRobinBackendConfig // Replace with dynamic logic if needed
     }
 
     suspend fun selectBackend(): InetSocketAddress {
         val strategy = strategyInstances[backEndConfig.lbStrategyType]
             ?: throw IllegalStateException("No strategy found for ${backEndConfig.lbStrategyType}")
-        return strategy.selectBackend()
+        val backend = strategy.selectBackend()
+        logger.info { "Backend selected: ${backend.port}" }
+        return backend
     }
 
     fun getBackendAddresses(): List<InetSocketAddress> {

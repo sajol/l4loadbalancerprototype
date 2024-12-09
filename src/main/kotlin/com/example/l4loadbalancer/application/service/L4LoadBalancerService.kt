@@ -10,13 +10,16 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousServerSocketChannel
 import java.nio.channels.AsynchronousSocketChannel
+import java.util.concurrent.Executors
 
 class L4LoadBalancerService(
     private val backendConfigService: BackendConfigService,
 ) {
     private val logger = KotlinLogging.logger {}
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
     private lateinit var server: AsynchronousServerSocketChannel
+    private val acceptThreadPool = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
+
 
     init {
         ConnectionTracker.initialize(backendConfigService.getBackendAddresses())
@@ -24,21 +27,24 @@ class L4LoadBalancerService(
 
     fun startServer() = runBlocking {
         // Initialize the server socket
-        server = AsynchronousServerSocketChannel.open().bind(InetSocketAddress("localhost", 8080))
+        server = AsynchronousServerSocketChannel.open()
+            .bind(InetSocketAddress("localhost", 8080), 1024)
         logger.info { "L4 Load Balancer started on port 8080" }
 
         // Accept connections in a loop
         while (true) {
-            val client = server.suspendAccept()
-            logger.info { "New client connected from ${client.remoteAddress}" }
-            scope.launch {
-                try {
-                    handleClient(client)
-                } catch (e: Exception) {
-                    logger.error(e) { "Error while handling connection from ${client.remoteAddress}" }
-                    sendErrorResponse(client, "Internal Server Error")
-                } finally {
-                    closeConnection(client)
+            withContext(acceptThreadPool) {
+                val client = server.suspendAccept()
+                logger.info { "New client connected from ${client.remoteAddress}" }
+                scope.launch {
+                    try {
+                        handleClient(client)
+                    } catch (e: Exception) {
+                        logger.error(e) { "Error while handling connection from ${client.remoteAddress}" }
+                        sendErrorResponse(client, "Internal Server Error")
+                    } finally {
+                        closeConnection(client)
+                    }
                 }
             }
         }
