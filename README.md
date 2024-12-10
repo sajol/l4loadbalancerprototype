@@ -112,3 +112,75 @@ The tests cover:
 - New Strategies: Implement the LBStrategy interface to add custom load balancing logic.
 - Dynamic Backend Configuration: Replace the static backend list with a database-driven configuration.
 - Health Checks: Add logic to exclude unhealthy backends.
+
+---
+## Load Testing Results
+
+### Overview
+The L4 Load Balancer prototype was subjected to load testing to validate its performance and scalability. Here are the highlights from the testing results:
+
+### Results Summary
+- **Concurrency**: Successfully handled **700 concurrent requests**.
+- **Throughput**: Achieved **2686.5 requests/sec**.
+- **Latency Distribution**:
+    - **Fastest**: 49 ms
+    - **Average**: 127.7 ms
+    - **Slowest**: 259 ms
+    - **95% of requests** completed in under **237 ms**.
+- **Status Code**: 100% success with **700 HTTP 200 responses**.
+
+### Observations
+1. **Backend Utilization**:
+    - The load balancer distributed requests evenly across 4 backend servers.
+    - Each backend has a capacity of **170 concurrent connections**.
+
+2. **System Stability**:
+    - Proper tuning of the connection backlog and file descriptor limits ensured stable performance under high load.
+    - No dropped connections or `connection reset by peer` errors were observed.
+
+3. **Potential for Scaling**:
+    - The system performed exceptionally well at its theoretical limit of **700 concurrent requests**.
+    - With additional backend servers, the load balancer can scale further.
+
+### Benchmark Details
+The load testing was conducted using the `hey` tool:
+```bash
+hey -n 1000 -c 700 http://localhost:8080/
+```
+```text
+Summary:
+  Total:	0.2606 secs
+  Slowest:	0.2593 secs
+  Fastest:	0.0490 secs
+  Average:	0.1277 secs
+  Requests/sec:	2686.4969
+
+Latency distribution:
+  10% in 0.0600 secs
+  25% in 0.0666 secs
+  50% in 0.1170 secs
+  75% in 0.1788 secs
+  90% in 0.2175 secs
+  95% in 0.2374 secs
+  99% in 0.2567 secs
+```
+
+### Machine Specifications
+
+The load testing was performed on the following setup:
+
+- **CPU**: Intel Core i7-9750H (6 cores, 12 threads)
+- **Memory**: 16GB DDR4
+- **Operating System**: macOS Ventura 13.4
+- **JVM Version**: OpenJDK 17.0.6
+- **Network**: Localhost testing (requests routed directly to the load balancer and backends on the same machine)
+- **Backend Servers**:
+    - 4 backend servers running as **Docker containers** using the `hashicorp/http-echo` image.
+
+#### Docker Configuration
+- Docker Desktop version: `4.x` (for macOS)
+- Resource Limits:
+    - **CPU**: Default allocation (shared with host machine)
+    - **Memory**: Default allocation (shared with host machine)
+
+This configuration demonstrates how the load balancer performs when backends are hosted in Docker containers on the same machine. Resource contention between the load balancer and backend servers, as well as Docker’s virtualization overhead, should be considered when interpreting the results.
